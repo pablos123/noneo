@@ -1,0 +1,9 @@
+#!/bin/bash
+
+function example_function() {
+    echo "I want to print this information in the first column : And this in the second"
+}
+
+extra_functions=(
+    'example_function'
+)

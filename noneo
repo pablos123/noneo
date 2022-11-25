@@ -1,0 +1,138 @@
+#!/bin/bash
+
+# Default values
+use_cowsay=""
+use_lolcat=""
+pretty=""
+all_random=""
+
+color_seed="1000"
+frequency="0.1"
+cow_species="tux"
+
+script_path=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+# Get user's configuration if exist
+if [[ -e "$script_path/config" ]]; then
+    source "$script_path/config"
+fi
+
+logo="
+ ███▄    █  ▒█████   ███▄    █ ▓█████  ▒█████
+ ██ ▀█   █ ▒██▒  ██▒ ██ ▀█   █ ▓█   ▀ ▒██▒  ██▒
+▓██  ▀█ ██▒▒██░  ██▒▓██  ▀█ ██▒▒███   ▒██░  ██▒
+▓██▒  ▐▌██▒▒██   ██░▓██▒  ▐▌██▒▒▓█  ▄ ▒██   ██░
+▒██░   ▓██░░ ████▓▒░▒██░   ▓██░░▒████▒░ ████▓▒░
+░ ▒░   ▒ ▒ ░ ▒░▒░▒░ ░ ▒░   ▒ ▒ ░░ ▒░ ░░ ▒░▒░▒░
+░ ░░   ░ ▒ ░ ░ ▒ ▒░ ░ ░░   ░ ▒ ░░ ░  ░  ░ ▒ ▒░
+   ░   ░ ░ ░ ░ ░ ▒     ░   ░ ░    ░  ░  ░ ░ ▒
+         ░     ░ ░           ░    ░  ░    ░ ░
+"
+
+help="-c use colors
+-s seed for the colors
+-m monochromatic
+-d draw a 'cow' to say the information
+-C use a particular cow (list all cows with \`cowsay -l\`)
+-p blank lines between info functions
+-r make all random
+-h prints this help"
+
+while getopts "cdhpmrs:C:" opt; do
+    case $opt in
+        c) use_lolcat="True" ;;
+        C) cow_species="$OPTARG" ;;
+        d) use_cowsay="True" ;;
+        p) pretty="True" ;;
+        s) color_seed="$OPTARG" ;;
+        m) frequency="0.0001" ;;
+        r) all_random="True" ;;
+        h) (echo "$logo" | lolcat -S 198) && (echo "$help" | lolcat -F 0.001 -S 1000000) && exit 0 ;;
+        \?) echo "Invalid option use -h to see all the options" && exit 1 ;;
+    esac
+done
+
+if [[ -n $pretty ]]; then
+    util_linux_version=$(column --version | awk '{print $4}')
+
+    if [[ $util_linux_version < "2.37.2" ]]; then
+        echo "You have an old version of the column command. You need at least util-linux version 2.37.x" && exit 1;
+    fi
+fi
+
+cowsay_exists=""
+lolcat_exists=""
+if [[ -n $use_cowsay ]]; then
+    cowsay_exists=$(which cowsay);
+    if [[ -z $cowsay_exists ]]; then
+        echo "Install cowsay to draw a cow" && exit 1;
+    fi
+fi
+
+if [[ -n $use_lolcat ]]; then
+    lolcat_exists=$(which lolcat);
+    if [[ -z $lolcat_exists ]]; then
+        echo "Install lolcat to draw colors" && exit 1;
+    fi
+fi
+
+function get_info() {
+    # Get all the info provided by the functions
+    # The information is in the format:
+    # a: b
+    source "$script_path/info_functions"
+
+    counter=1
+    functions_count="${#info_functions[@]}"
+    for func in "${info_functions[@]}"; do
+        eval "$func"
+        if [[ -n $pretty && $counter < $functions_count ]]; then echo; fi;
+        counter=$((counter + 1))
+    done
+
+    if [[ -e "$script_path/extra_functions" ]]; then
+        source "$script_path/extra_functions"
+        counter=1
+        extra_functions_count="${#extra_functions[@]}"
+        for func in "${extra_functions[@]}"; do
+            eval "$func"
+            if [[ -n $pretty && $counter < $extra_functions_count ]]; then echo; fi;
+            counter=$((counter + 1))
+        done
+    fi
+
+}
+
+function noneo() {
+    get_info | sed --expression="s/\(.*:\)\s*/\1 /g" |
+
+    if [[ -n $pretty ]]; then
+        column --keep-empty-lines --table --separator ':';
+    else
+        column --table --separator ':';
+    fi |
+
+    if [[ -n $all_random ]]; then
+        if [[ $COWPATH ]]; then
+            farm=$COWPATH;
+        else
+            farm="/usr/share/cowsay/cows/";
+        fi;
+
+        # Enter the farm, look for a cow
+        cd $farm || (echo "The farm does not exist!" && exit 1)
+        cows=(*.cow)
+        cows_count=${#cows[@]}
+        random_cow=$((RANDOM % cows_count))
+        chosen_cow="${cows[$random_cow]}"
+        random_seed=$((RANDOM % 100000))
+
+        if [[ -n $cowsay_exists ]]; then cowsay -n -f "$chosen_cow"; else tee; fi |
+        if [[ -n $lolcat_exists ]]; then lolcat --freq="$frequency" --seed="$random_seed"; else tee; fi;
+    else
+        if [[ -n $cowsay_exists ]]; then cowsay -n -f "$cow_species"; else tee; fi |
+        if [[ -n $lolcat_exists ]]; then lolcat --freq="$frequency" --seed="$color_seed"; else tee; fi;
+    fi
+}
+
+noneo

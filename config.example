@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Default values
+use_cowsay=""
+use_lolcat=""
+pretty=""
+all_random=""
+
+color_seed="1000"
+frequency="0.1"
+cow_species="tux"
