@@ -81,6 +81,8 @@ You can create or use the *config.example* file.
 
 All the possible configurations with their default value are in the *config.example* file.
 
+An example with no default values is shown below.
+
 ### Example
 
 ```terminal
