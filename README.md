@@ -75,9 +75,11 @@ WM Name          i3
 ## Configuration
 The default values seek having a good behaviour if no tool is installed (cowsay, lolcat) so they are very basic.
 
-If you want to change some of them you can create a config file in the directory of noneo.
+If you want to change some of them you can create a file named *config* in the directory of noneo.
 
-You can create or use the *config.example* file to change the values:
+You can create or use the *config.example* file.
+
+All the possible configurations with their default value are in the *config.example* file.
 
 ### Example
 
