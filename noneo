@@ -12,6 +12,9 @@ cow_species="tux"
 
 script_path=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
+cowsay_exists=$(which cowsay)
+lolcat_exists=$(which lolcat)
+
 # Get user's configuration if exist
 if [[ -e "$script_path/config" ]]; then
     source "$script_path/config"
@@ -47,7 +50,8 @@ while getopts "cdhpmrs:C:" opt; do
         s) color_seed="$OPTARG" ;;
         m) frequency="0.0001" ;;
         r) all_random="True" ;;
-        h) (echo "$logo" | lolcat -S 198) && (echo "$help" | lolcat -F 0.001 -S 1000000) && exit 0 ;;
+        h) (echo "$logo" | if [[ -n $lolcat_existslolcat ]]; then lolcat -S 198; else tee; fi) && (echo "$help" |
+            if [[ -n $lolcat_existslolcat ]]; then lolcat -F 0.001 -S 1000000; else tee; fi) && exit 0 ;;
         \?) echo "Invalid option use -h to see all the options" && exit 1 ;;
     esac
 done
@@ -60,17 +64,13 @@ if [[ -n $pretty ]]; then
     fi
 fi
 
-cowsay_exists=""
-lolcat_exists=""
 if [[ -n $use_cowsay ]]; then
-    cowsay_exists=$(which cowsay);
     if [[ -z $cowsay_exists ]]; then
         echo "Install cowsay to draw a cow" && exit 1;
     fi
 fi
 
 if [[ -n $use_lolcat ]]; then
-    lolcat_exists=$(which lolcat);
     if [[ -z $lolcat_exists ]]; then
         echo "Install lolcat to draw colors" && exit 1;
     fi
@@ -94,6 +94,7 @@ function get_info() {
         source "$script_path/extra_functions"
         counter=1
         extra_functions_count="${#extra_functions[@]}"
+        if [[ $extra_functions_count > 0 ]]; then echo; fi;
         for func in "${extra_functions[@]}"; do
             eval "$func"
             if [[ -n $pretty && $counter < $extra_functions_count ]]; then echo; fi;
